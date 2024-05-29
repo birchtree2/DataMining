@@ -1,0 +1,3 @@
+2024-05-25 15:03:34.841 | INFO     | __main__:<module>:67 - start training
+2024-05-25 15:03:34.842 | INFO     | __main__:<module>:68 - seed: 2023
+2024-05-25 15:03:35.972 | INFO     | __main__:<module>:96 - epoch: 0, loss: 0.7993640899658203, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0

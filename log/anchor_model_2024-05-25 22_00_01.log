@@ -1,0 +1,26 @@
+2024-05-25 22:00:01.306 | INFO     | __main__:<module>:67 - start training
+2024-05-25 22:00:01.306 | INFO     | __main__:<module>:68 - seed: 2023
+2024-05-25 22:00:02.488 | INFO     | __main__:<module>:98 - epoch: 0, loss: 64.31106567382812, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.518 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.6280533075332642, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.551 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7389840483665466, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.577 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7578637003898621, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.610 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7609428763389587, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.635 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7708771228790283, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.662 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7846025228500366, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.687 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7738550901412964, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.713 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7700523138046265, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.739 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7671381235122681, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.775 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7732168436050415, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.807 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7550587058067322, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.833 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7552803158760071, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.859 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7589530944824219, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.885 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.744432806968689, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.921 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7330647706985474, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.947 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7322195768356323, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.973 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7123847007751465, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:02.998 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.7056806683540344, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:03.037 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.6667400598526001, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:03.066 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.6441758871078491, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:03.092 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.5827420353889465, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:03.118 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.550881028175354, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
+2024-05-25 22:00:03.166 | INFO     | __main__:<module>:98 - epoch: 0, loss: 0.5364275574684143, metrics: top1: 0 top5: 0 top10: 0 top50: 0 top100: 0 top500: 0
