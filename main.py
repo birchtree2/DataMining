@@ -67,6 +67,7 @@ if __name__ == "__main__":
     #windows下的路径不能有冒号
 
     logger.add(log_path)
+    logger.info("model={}".format(args.model))
     logger.info("start training")
     logger.info("seed: {}".format(args.seed))
     

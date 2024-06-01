@@ -2,17 +2,20 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from modules import Model,GCNNModel
-
+from modules import Model,GCNNModel,CNN_Attention
+from loguru import logger
 class AnchorModel(nn.Module):
     def __init__(self, hidden_size,model_type='GCNN'):
         super().__init__()
         # self.extractor = Model(hidden_size)
         if(model_type=='GCNN'):
-            print('Using GCNN')
+            logger.info('Using GCNN')
             self.extractor = GCNNModel(hidden_size)
+        if(model_type=='Attn'):
+            logger.info('Using Attn')
+            self.extractor = CNN_Attention(hidden_size)
         else:
-            print('Using baseline')
+            logger.info('Using baseline')
             self.extractor = Model(hidden_size)
     
     def forward(self, 

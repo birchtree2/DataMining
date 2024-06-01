@@ -76,7 +76,46 @@ class CNN(nn.Module):
         x = x.view(seq_num, self.input_size, -1) #[B,K,channel]
         
         return x
+    
+class CNN_Attention(nn.Module):
+    def __init__(self,din=20,dk=16,dv=16):
+        super().__init__()
+        self.din=din
+        self.dk=dk
+        self.dv=dv
+        self.embedding = OnehotEmbedding(self.din+1)
+        self.wq=nn.Linear(din,dk)
+        self.wk=nn.Linear(din,dk)
+        self.wv=nn.Linear(din,dv)
+        self.norm_fact=1/math.sqrt(dk)
+        self.max_seq_length = 512
+        total_layers = int(math.log2(self.max_seq_length))
+        self.channel = 8
+        self.convs = nn.Sequential(
+            nn.Conv1d(1, self.channel, 3, 1, padding=1, bias=False),
+            nn.AvgPool1d(2),
+        )
+        for i in range(total_layers - 1):
+            self.convs.add_module('conv{}'.format(i), nn.Conv1d(self.channel, self.channel, 3, 1, padding=1, bias=False))
+            self.convs.add_module('pool{}'.format(i), nn.AvgPool1d(2))
         
+    def forward(self, seq_inputs, seq_masks):
+        batchsize=seq_inputs.shape[0]
+        x=self.embedding(seq_inputs) #[B,512,20]
+        #[B,L,K] B:batch_size, L:seq_length(512), K:num_amino_acids(20)
+        Q=self.wq(x)
+        K=self.wk(x)
+        K_T=K.permute(0,2,1) #[B,20,512]
+        V=self.wv(x)
+        A= nn.Softmax(dim=-1)(torch.bmm(Q, K_T) * self.norm_fact) #[B,512,512]
+        x = torch.bmm(A, V) #[B,512,16]
+        x = x.contiguous().view(-1, 1, self.max_seq_length) #[B*dv,1,L]
+        x = self.convs(x) #[B*dv,CHANNEL,1]
+        x=x.squeeze(-1) #[B*dv,channel]
+        x = x.view(batchsize, -1)
+        return x
+        
+
 class RNN(nn.Module):
     def __init__(self, input_size=-1, hidden_size=-1, num_layers=1, output_size=None, rnn_type='lstm', bidirectional=True, dropout=0.0):
         super(RNN, self).__init__()
@@ -144,7 +183,8 @@ class Model(nn.Module):
         final_embedding = self.output_layer(sequence_embeddings) #[B,128]
 
         return final_embedding
-    
+
+
 import copy
 class GCNNModel(nn.Module):
     def __init__(self, hidden_size, 
@@ -203,19 +243,3 @@ class GCNNModel(nn.Module):
         return x
         #use nn.linear
         
-
-        # sequence_embeddings = self.encoder(sequences, seq_masks) #[B,20,8]
-        
-        # sequence_embeddings = sequence_embeddings.view(batch_size, -1) # [B, 160]
-
-        #use Gated-CNN
-        
-
-
-
-            
-            
-
-        # final_embedding = self.output_layer(sequence_embeddings) #[B,128]
-
-        # return final_embedding
