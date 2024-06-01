@@ -7,7 +7,7 @@ from loguru import logger
 class AnchorModel(nn.Module):
     def __init__(self, hidden_size,model_type='GCNN'):
         super().__init__()
-        # self.extractor = Model(hidden_size)
+        # self.extractor = Model(hidden_size,encoder_type=model_type)
         if(model_type=='GCNN'):
             logger.info('Using GCNN')
             self.extractor = GCNNModel(hidden_size)
@@ -17,6 +17,8 @@ class AnchorModel(nn.Module):
         else:
             logger.info('Using baseline')
             self.extractor = Model(hidden_size)
+        #输出模型参数量
+        logger.info('Model has {} parameters'.format(sum(p.numel() for p in self.parameters() if p.requires_grad)))
     
     def forward(self, 
                 inputs, 

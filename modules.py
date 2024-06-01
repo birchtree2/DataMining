@@ -51,6 +51,52 @@ class Attention(nn.Module):
             return torch.bmm(self.transform(query),
                              self.transform(key).transpose(1, 2))
 
+class CNN_Attention(nn.Module):
+    def __init__(self,hidden_size):
+        super().__init__()
+        self.seq_len = 512
+        self.d_model = 24
+        nhead = 8  
+        num_layers = 6  
+        channel = 8
+        self.embedding = OnehotEmbedding(21)
+        self.conv1 = nn.Conv1d(20, self.d_model, 3, padding=1)
+        self.encoder_layer = nn.TransformerEncoderLayer(
+            d_model=self.d_model,
+            nhead=nhead,
+            dim_feedforward=32,  # 前馈神经网络中的隐藏层维度
+            dropout=0.1,
+            activation='relu'
+        )
+        self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_layers)
+        self.convs = nn.Sequential(
+            nn.Conv1d(1, channel, 3, 1, padding=1, bias=False),
+            nn.AvgPool1d(2)
+        )
+        total_layers=9
+        for i in range(total_layers - 1):
+            self.convs.add_module('conv{}'.format(i), nn.Conv1d(channel, channel, 3, 1, padding=1, bias=False))
+            self.convs.add_module('pool{}'.format(i), nn.AvgPool1d(2))
+        self.mlp=nn.Linear(channel*self.d_model,128)
+
+    def forward(self, sequence, masks):
+        batch_size=sequence.shape[0]
+        x = self.embedding(sequence)
+        x = x.permute(0,2,1) #[B,K,L]
+        # x = x.contiguous().view(-1, 1, self.seq_len) #[B*K,1,L]
+        x = self.conv1(x) 
+        x = x.permute(0,2,1) #[B,L,K]
+        x = self.encoder(x) #[B,L,d]
+        x = x.contiguous().view(-1, 1, self.seq_len)
+        #[B*d,1,L]
+        x = self.convs(x)
+        x=x.squeeze(-1) #[B*d,channel]
+        x = x.view(batch_size, self.d_model, -1) #[B,d,channel]
+        x = x.view(batch_size, -1) #[B,d*channel]
+        x = self.mlp(x)
+        return x
+        
+
 class CNN(nn.Module):
     def __init__(self):
         super().__init__()
@@ -77,43 +123,7 @@ class CNN(nn.Module):
         
         return x
     
-class CNN_Attention(nn.Module):
-    def __init__(self,din=20,dk=16,dv=16):
-        super().__init__()
-        self.din=din
-        self.dk=dk
-        self.dv=dv
-        self.embedding = OnehotEmbedding(self.din+1)
-        self.wq=nn.Linear(din,dk)
-        self.wk=nn.Linear(din,dk)
-        self.wv=nn.Linear(din,dv)
-        self.norm_fact=1/math.sqrt(dk)
-        self.max_seq_length = 512
-        total_layers = int(math.log2(self.max_seq_length))
-        self.channel = 8
-        self.convs = nn.Sequential(
-            nn.Conv1d(1, self.channel, 3, 1, padding=1, bias=False),
-            nn.AvgPool1d(2),
-        )
-        for i in range(total_layers - 1):
-            self.convs.add_module('conv{}'.format(i), nn.Conv1d(self.channel, self.channel, 3, 1, padding=1, bias=False))
-            self.convs.add_module('pool{}'.format(i), nn.AvgPool1d(2))
-        
-    def forward(self, seq_inputs, seq_masks):
-        batchsize=seq_inputs.shape[0]
-        x=self.embedding(seq_inputs) #[B,512,20]
-        #[B,L,K] B:batch_size, L:seq_length(512), K:num_amino_acids(20)
-        Q=self.wq(x)
-        K=self.wk(x)
-        K_T=K.permute(0,2,1) #[B,20,512]
-        V=self.wv(x)
-        A= nn.Softmax(dim=-1)(torch.bmm(Q, K_T) * self.norm_fact) #[B,512,512]
-        x = torch.bmm(A, V) #[B,512,16]
-        x = x.contiguous().view(-1, 1, self.max_seq_length) #[B*dv,1,L]
-        x = self.convs(x) #[B*dv,CHANNEL,1]
-        x=x.squeeze(-1) #[B*dv,channel]
-        x = x.view(batchsize, -1)
-        return x
+# 
         
 
 class RNN(nn.Module):
@@ -168,7 +178,8 @@ class Model(nn.Module):
             self.rnn_encoder = RNN(input_size=hidden_size, hidden_size=hidden_size, num_layers=1)
         elif encoder_type == "rnn":
             self.encoder = RNN(input_size=hidden_size, hidden_size=hidden_size, num_layers=1)
-
+        # elif encoder_type == "transformer":
+        #     self.encoder=nn.TransformerEncoderLayer()
         self.output_layer = nn.Linear(160, 128)
     
     def forward(self, seq_inputs, seq_masks):
@@ -243,3 +254,41 @@ class GCNNModel(nn.Module):
         return x
         #use nn.linear
         
+
+    #     def __init__(self,din=20,dk=32,dv=32):
+#         super().__init__()
+#         self.din=din
+#         self.dk=dk
+#         self.dv=dv
+#         self.embedding = OnehotEmbedding(self.din+1)
+#         self.wq=nn.Linear(din,dk)
+#         self.wk=nn.Linear(din,dk)
+#         self.wv=nn.Linear(din,dv)
+#         self.norm_fact=1/math.sqrt(dk)
+#         self.max_seq_length = 512
+#         total_layers = int(math.log2(self.max_seq_length))
+#         self.channel = 8
+#         self.convs = nn.Sequential(
+#             nn.Conv1d(1, self.channel, 3, 1, padding=1, bias=False),
+#             nn.AvgPool1d(2),
+#         )
+#         for i in range(total_layers - 1):
+#             self.convs.add_module('conv{}'.format(i), nn.Conv1d(self.channel, self.channel, 3, 1, padding=1, bias=False))
+#             self.convs.add_module('pool{}'.format(i), nn.AvgPool1d(2))
+
+        
+#     def forward(self, seq_inputs, seq_masks):
+#         batchsize=seq_inputs.shape[0]
+#         x=self.embedding(seq_inputs) #[B,512,20]
+#         #[B,L,K] B:batch_size, L:seq_length(512), K:num_amino_acids(20)
+#         Q=self.wq(x)
+#         K=self.wk(x)
+#         K_T=K.permute(0,2,1) #[B,20,512]
+#         V=self.wv(x)
+#         A= nn.Softmax(dim=-1)(torch.bmm(Q, K_T) * self.norm_fact) #[B,512,512]
+#         x = torch.bmm(A, V) #[B,512,16]
+#         x = x.contiguous().view(-1, 1, self.max_seq_length) #[B*dv,1,L]
+#         x = self.convs(x) #[B*dv,CHANNEL,1]
+#         x=x.squeeze(-1) #[B*dv,channel]
+#         x = x.view(batchsize, -1)
+#         return x
