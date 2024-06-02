@@ -14,6 +14,9 @@ class AnchorModel(nn.Module):
         if(model_type=='Attn'):
             logger.info('Using Attn')
             self.extractor = CNN_Attention(hidden_size)
+        elif(model_type=='CNNDilation'):
+            logger.info('Using CNN+Dilation')
+            self.extrator=Model(hidden_size,encoder_type='cnn2')
         else:
             logger.info('Using baseline')
             self.extractor = Model(hidden_size)

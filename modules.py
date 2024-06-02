@@ -4,7 +4,7 @@ import torch.nn as nn
 from functools import reduce
 import torch.nn.functional as F
 from torch.distributions import Normal
-
+from loguru import logger
 def add(x, y):
     return x+y
 
@@ -50,21 +50,42 @@ class Attention(nn.Module):
         elif self.style == 'decomposable':
             return torch.bmm(self.transform(query),
                              self.transform(key).transpose(1, 2))
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)  # include a batch dimension
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        # Make embeddings relatively larger
+        x = x * math.sqrt(self.pe.size(-1))
+        # Add constant to embedding
+        seq_len = x.size(1)
+        x = x + self.pe[:, :seq_len]
+        return x
+
 
 class CNN_Attention(nn.Module):
     def __init__(self,hidden_size):
         super().__init__()
         self.seq_len = 512
-        self.d_model = 24
+        self.din=20
+        self.d_model = 16
         nhead = 8  
         num_layers = 6  
         channel = 8
         self.embedding = OnehotEmbedding(21)
-        self.conv1 = nn.Conv1d(20, self.d_model, 3, padding=1)
+        self.conv1 = nn.Conv1d(self.din, self.d_model, 5, padding=2)
+        self.pos=PositionalEncoding(d_model=self.din,max_len=self.seq_len)
         self.encoder_layer = nn.TransformerEncoderLayer(
             d_model=self.d_model,
             nhead=nhead,
-            dim_feedforward=32,  # 前馈神经网络中的隐藏层维度
+            dim_feedforward=16,  # 前馈神经网络中的隐藏层维度
             dropout=0.1,
             activation='relu'
         )
@@ -78,10 +99,12 @@ class CNN_Attention(nn.Module):
             self.convs.add_module('conv{}'.format(i), nn.Conv1d(channel, channel, 3, 1, padding=1, bias=False))
             self.convs.add_module('pool{}'.format(i), nn.AvgPool1d(2))
         self.mlp=nn.Linear(channel*self.d_model,128)
+        
 
     def forward(self, sequence, masks):
         batch_size=sequence.shape[0]
         x = self.embedding(sequence)
+        x = self.pos(x)
         x = x.permute(0,2,1) #[B,K,L]
         # x = x.contiguous().view(-1, 1, self.seq_len) #[B*K,1,L]
         x = self.conv1(x) 
@@ -123,7 +146,40 @@ class CNN(nn.Module):
         
         return x
     
-# 
+class CNN_Dilation(nn.Module):
+    def __init__(self):
+        super().__init__()
+        channel = 8
+        dilation=2 #dilation
+        dl_layers=4 #number of dilation layers
+        self.input_size = 20
+        self.max_seq_length = 512
+        total_layers = int(math.log2(self.max_seq_length))//2
+        self.convs = nn.Sequential(
+            nn.Conv1d(1, channel, 5, 1, padding=2, bias=False),
+            nn.AvgPool1d(2),
+        )
+        k=5 #kernel size
+        for i in range(1,dl_layers+1):
+            self.convs.add_module(f'dl{i}',
+                nn.Conv1d(channel,channel, kernel_size=k, dilation=dilation**i, padding=(k-1)//2*(dilation**i)))
+        # self.convs.add_module('dl2',nn.Conv1d(channel,channel, kernel_size=k, dilation=dilation**2, padding=(k-1)//2*(dilation**2)))
+        # self.convs.add_module('dl3',nn.Conv1d(channel,channel, kernel_size=k, dilation=dilation**3, padding=(k-1)//2*(dilation**3)))
+        # self.convs.add_module('dl4',nn.Conv1d(channel,channel, kernel_size=k, dilation=dilation**4, padding=(k-1)//2*(dilation**4)))
+        for i in range(total_layers):
+            self.convs.add_module('conv{}'.format(i), nn.Conv1d(channel, channel, 3, 1, padding=1, bias=False))
+            self.convs.add_module('pool{}'.format(i), nn.AvgPool1d(4))
+        logger.info(f'kernel_size={k},dilation_layers={dl_layers}')
+    def forward(self, x, masks):
+        seq_num = len(x) #[B,L,K] B:batch_size, L:seq_length(512), K:num_amino_acids(20)
+        x = x.permute(0, 2, 1) #[B,K,L]
+        
+        x = x.contiguous().view(-1, 1, self.max_seq_length) #[B*K,1,L]
+        x = self.convs(x) #[B*K,CHANNEL,1]
+        x=x.squeeze(-1) #[B*K,channel]
+        x = x.view(seq_num, self.input_size, -1) #[B,K,channel]
+        
+        return x
         
 
 class RNN(nn.Module):
@@ -166,7 +222,7 @@ class RNN(nn.Module):
 class Model(nn.Module):
     def __init__(self, hidden_size, 
                  embedding_type="onehot",
-                 encoder_type="cnn"):
+                 encoder_type="cnn2"):
         super().__init__()
         if embedding_type == "onehot":
             self.embedding = OnehotEmbedding(21)
@@ -175,12 +231,17 @@ class Model(nn.Module):
             self.embedding = nn.Embedding(21, hidden_size, padding_idx=0)
         if encoder_type == "cnn":
             self.encoder = CNN()
+            self.output_layer = nn.Linear(160, 128)
+            # self.encoder = CNN_Dilation()
             self.rnn_encoder = RNN(input_size=hidden_size, hidden_size=hidden_size, num_layers=1)
         elif encoder_type == "rnn":
             self.encoder = RNN(input_size=hidden_size, hidden_size=hidden_size, num_layers=1)
         # elif encoder_type == "transformer":
         #     self.encoder=nn.TransformerEncoderLayer()
-        self.output_layer = nn.Linear(160, 128)
+        elif encoder_type == "cnn2":
+            print('use dilation')
+            self.encoder = CNN_Dilation()
+            self.output_layer = nn.Linear(160, 128)
     
     def forward(self, seq_inputs, seq_masks):
         batch_size = seq_inputs.shape[0] # [B, 512]
@@ -189,6 +250,7 @@ class Model(nn.Module):
         
         sequence_embeddings = self.encoder(sequences, seq_masks) #[B,20,8]
         
+        # print(sequence_embeddings.shape)
         sequence_embeddings = sequence_embeddings.view(batch_size, -1) # [B, 160]
 
         final_embedding = self.output_layer(sequence_embeddings) #[B,128]
