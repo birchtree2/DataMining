@@ -19,7 +19,7 @@ class AnchorModel(nn.Module):
             self.extrator=Model(hidden_size,encoder_type='cnn2')
         else:
             logger.info('Using baseline')
-            self.extractor = Model(hidden_size)
+            self.extractor = Model(hidden_size,encoder_type='cnn')
         #输出模型参数量
         logger.info('Model has {} parameters'.format(sum(p.numel() for p in self.parameters() if p.requires_grad)))
     
