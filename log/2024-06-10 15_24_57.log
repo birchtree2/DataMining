@@ -1,0 +1,3 @@
+2024-06-10 15:24:57.136 | INFO     | __main__:<module>:70 - model=CNNDilation
+2024-06-10 15:24:57.137 | INFO     | __main__:<module>:71 - start training
+2024-06-10 15:24:57.137 | INFO     | __main__:<module>:72 - seed: 2023
